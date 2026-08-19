@@ -97,6 +97,42 @@ The `bins` have two configuration options:
     ]
     ```
 
+## Drug-target datasets (DAVIS / KIBA)
+
+Vanilla `SAE_split.py` measures similarity from the ligand SMILES only, which is the
+right thing for a single-target dataset. DAVIS (68 ligands x 442 kinases) and KIBA
+(2111 ligands x 229 targets) are *pair* datasets: a test pair can look novel on the
+ligand alone while its target's whole family is saturated in training. The scripts
+below build a pair-level similarity and split on that.
+
+```bash
+# 1. recover target sequences from the AlphaFold/ESMFold models shipped with each dataset
+python dta_prep.py
+
+# 2. run the pair-aware SAE split (writes matrices, per-iteration trace, figures)
+python run_dta_sae_split.py --dataset DAVIS --max-iters 20000
+python run_dta_sae_split.py --dataset KIBA --subsample 30000 --max-iters 20000
+
+# 3. compare it against random splits and the DeepDTA benchmark fold
+python compare_dta_splits.py --dataset DAVIS --sae-dir dta_output/DAVIS_min_iters20000_seed233
+```
+
+Pair similarity is `combine(tanimoto(ligand_i, ligand_j), jaccard_kmer(target_i, target_j))`,
+with `--combine min` by default so that a pair only counts as close when *both* its
+ligand and its target are close.
+
+`--subsample` exists because the pair matrix is dense `float64` of size `8*N^2`: DAVIS
+(30056 pairs) needs 7.2 GB, but full KIBA (118254 pairs) would need 112 GB. float64 is
+required, not incidental - SAE evaluates `exp(100 * S)`, which overflows float32.
+
+Each run directory contains:
+
+- `run.log`, `diagnostics.json` - every stage's statistics
+- `optimization_trace.csv` - per-closure losses, `sum(W)`, W binarization, and the
+  overlap between the current rounded split and the initial one
+- `fig1_similarity_stages.png`, `fig2_optimization.png`, `fig3_result.png`
+- `train.csv`, `test.csv`, `W.npy`, `real_R.npy`, `drug_sim.npy`, `target_sim.npy`
+
 ## Other scripts
 1. `select_split.py`
     - Description: select the optimal splitting result in the grid-search experiment.

@@ -1,0 +1,6 @@
+__pycache__/run_dta_sae_split.cpython-310.pyc
+*.pyc
+**/demo_output
+dta_output/*
+input_data/*
+demo_output/IC50_EGFR/*

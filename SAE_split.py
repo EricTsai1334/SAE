@@ -153,7 +153,7 @@ def balance_split(
         table, S, alpha, max_iters=5000, bins=[0, 1/3, 2/3, 1], sigma=0.01, lamb=1.0, scale_factor=100,
         base_lr=1e-3, optim_kind='ExtraSGD', sched_kind='CosineAnnealing', init_kind='normal', eps=1e-6,
         sigmoid=True, init_scale=5,
-        seed=233,
+        seed=233, log_freq=500,
     ):
     assert 0. < alpha < 1.
     # seed all
@@ -163,7 +163,6 @@ def balance_split(
     torch.cuda.manual_seed_all(seed)
     # experimental configurations
     # log_freq = max(max_iters // 100, 1)
-    log_freq = 500
     if torch.cuda.is_available():
         device = torch.device('cuda')
     else:
